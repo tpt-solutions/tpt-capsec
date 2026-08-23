@@ -1,0 +1,65 @@
+# Design Document: `tpt-capsec`
+## Capability-Based Authority and Sandboxing
+
+### 1. Overview
+Rust guarantees memory safety, but it does not prevent *ambient authority* (e.g., a function with a valid reference can still call `std::fs::remove_dir_all` or open a network socket). `tpt-capsec` introduces a native, ergonomic capability-based security model to Rust, allowing developers to strictly sandbox code, AI agents, and plugins without the heavy overhead of WASM.
+
+### 2. Core Primitives
+#### 2.1 Unforgeable Capability Tokens
+The foundation of the system. Capabilities are opaque, unforgeable tokens representing specific authorities (e.g., `FsReadToken`, `NetBindToken`, `CryptoSignToken`).
+* **Mechanism:** Implemented using a type-state pattern and private constructors. Tokens can only be created by the "root" environment or delegated from a parent token.
+
+#### 2.2 Sandboxed Standard Library Wrappers
+A parallel, secure implementation of standard I/O operations.
+* **Mechanism:** `tpt_capsec::fs::read(path, token: &FsReadToken)`. If the caller does not possess the exact token, the code simply will not compile.
+
+#### 2.3 Delegation and Revocation (Linear Types Emulation)
+Capabilities can be delegated to child scopes, but Rust's borrow checker is used to emulate linear types, ensuring a capability cannot be duplicated or used after it has been revoked or passed.
+
+### 3. Architecture
+```text
+[ Root Environment ] 
+       │ (Creates RootCapability)
+       ▼
+[ Application Logic ] 
+       │ (Delegates FsReadToken, NetToken)
+       ▼
+[ Sandboxed Module / Plugin / AI Agent ]
+       │ (Can only perform actions allowed by its specific tokens)
+       ▼
+[ OS / Syscall Layer ] (Validates token presence before execution)
+```
+
+### 4. API Examples
+```rust
+use tpt_capsec::prelude::*;
+use tpt_capsec::fs;
+
+// The main function holds the root authority
+fn main() {
+    let root = RootCapability::acquire();
+    
+    // Delegate specific, scoped permissions to a worker
+    let fs_token = root.delegate_fs_read("/var/data");
+    let net_token = root.delegate_net_connect("api.example.com");
+    
+    // The worker function CANNOT delete files or bind ports, 
+    // because it lacks those specific tokens.
+    process_data(fs_token, net_token);
+}
+
+// The signature explicitly declares required authority
+fn process_data(fs: FsReadToken<'_>, net: NetConnectToken<'_>) {
+    let data = fs::read("/var/data/config.json", &fs).unwrap();
+    // fs::remove("/var/data/config.json", &fs); // COMPILE ERROR: Requires FsWriteToken
+}
+```
+
+### 5. Implementation Strategy
+1. **Phase 1:** Define the core `Capability` trait and the type-state token generators.
+2. **Phase 2:** Implement the sandboxed wrappers for `std::fs`, `std::net`, and `std::process`.
+3. **Phase 3:** Build the delegation and revocation mechanics, ensuring they integrate smoothly with Rust's lifetime and borrow checker.
+4. **Phase 4:** Create integration layers for popular plugin systems (e.g., `wasmtime`, `extism`) to map WASI capabilities to `tpt-capsec` tokens.
+
+### 6. Ecosystem Value
+As Rust expands into edge computing, AI agent orchestration, and secure enclaves, the lack of ambient authority control is a critical gap. `tpt-capsec` provides a lightweight, native alternative to WASM sandboxes, appealing to security-conscious developers building multi-tenant systems, game engines, and AI tooling.
