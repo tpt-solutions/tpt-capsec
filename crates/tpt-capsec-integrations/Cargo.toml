@@ -1,0 +1,26 @@
+[package]
+name = "tpt-capsec-integrations"
+version = "0.1.0"
+edition = { workspace = true }
+rust-version = { workspace = true }
+authors = { workspace = true }
+license = { workspace = true }
+repository = { workspace = true }
+homepage = { workspace = true }
+description = "Integration layer mapping tpt-capsec capability tokens onto plugin/WASI-style sandboxes"
+keywords = ["capability", "wasi", "sandbox", "plugin", "security"]
+categories = ["wasm", "development-tools"]
+readme = "../../README.md"
+
+[package.metadata.docs.rs]
+all-features = true
+
+[dependencies]
+tpt-capsec = { version = "0.1.0", path = "../tpt-capsec" }
+
+# Engine adapters (direct wasmtime/extism bindings) are planned behind these
+# feature flags post-v0.1; see the crate documentation.
+[features]
+default = []
+wasmtime = []
+extism = []

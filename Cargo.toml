@@ -1,0 +1,21 @@
+[workspace]
+resolver = "2"
+members = [
+    "crates/tpt-capsec-core",
+    "crates/tpt-capsec",
+    "crates/tpt-capsec-integrations",
+]
+
+[workspace.package]
+authors = ["TPT Solutions"]
+edition = "2021"
+license = "MIT OR Apache-2.0"
+repository = "https://github.com/tpt-solutions/tpt-capsec"
+homepage = "https://github.com/tpt-solutions/tpt-capsec"
+rust-version = "1.75"
+
+[workspace.dependencies]
+tpt-capsec-core = { version = "0.1.0", path = "crates/tpt-capsec-core" }
+
+[profile.release]
+lto = true
