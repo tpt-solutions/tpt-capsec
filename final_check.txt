@@ -1,0 +1,85 @@
+   Compiling tpt-capsec v0.1.0 (D:\Programming\1PRODUCTION\Open Source\tpt-capsec\crates\tpt-capsec)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.66s
+     Running unittests src\lib.rs (target\debug\deps\tpt_capsec-29d81766c41b372c.exe)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests\fs_tests.rs (target\debug\deps\fs_tests-0d451b96ed1c61ea.exe)
+
+running 6 tests
+test fs_io_errors_pass_through ... ok
+test revoked_tokens_fail_every_wrapper ... ok
+test fs_out_of_scope_is_rejected ... ok
+test create_dir_all_and_remove_dir_all ... ok
+test fs_read_write_in_scope_succeeds ... ok
+test fs_dual_token_operations ... ok
+
+test result: ok. 6 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
+
+     Running tests\net_process_tests.rs (target\debug\deps\net_process_tests-99ef8e125196e677.exe)
+
+running 4 tests
+test net_connect_out_of_scope_host_rejected ... ok
+test spec_process_data_scenario ... ok
+test process_scope_check_and_spawn ... ok
+test net_bind_requires_exact_address ... ok
+
+test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 2.03s
+
+     Running unittests src\lib.rs (target\debug\deps\tpt_capsec_core-3158eadaffeed201.exe)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests\core_tests.rs (target\debug\deps\core_tests-fe43c6b9764d2a70.exe)
+
+running 12 tests
+test debug_impls_are_redacted ... ok
+test delegation_produces_correct_scopes ... ok
+test narrowing_restricts_scope ... ok
+test non_revocable_tokens_report_live ... ok
+test permits_host_exact_and_suffix ... ok
+test permits_path_component_prefix_semantics ... ok
+test permits_path_rejects_parent_traversal ... ok
+test permits_program_exact_allowlist ... ok
+test revocation_group_flags_tokens ... ok
+test revocation_survives_narrowing ... ok
+test token_scope_check_methods ... ok
+test tokens_are_send_and_sync ... ok
+
+test result: ok. 12 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running unittests src\lib.rs (target\debug\deps\tpt_capsec_integrations-55abcc179653176a.exe)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+   Doc-tests tpt_capsec
+
+running 5 tests
+test crates\tpt-capsec\src\process.rs - process::spawn (line 34) - compile ... ok
+test crates\tpt-capsec\src\net.rs - net::tcp_connect (line 31) - compile ... ok
+test crates\tpt-capsec\src\prelude.rs - prelude (line 3) ... ok
+test crates\tpt-capsec\src\lib.rs - (line 18) ... ok
+test crates\tpt-capsec\src\fs.rs - fs::read (line 56) ... ok
+
+test result: ok. 5 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 3.01s
+
+   Doc-tests tpt_capsec_core
+
+running 2 tests
+test crates\tpt-capsec-core\src\capability.rs - capability::RootCapability (line 35) ... ok
+test crates\tpt-capsec-core\src\revocation.rs - revocation::RevocationGroup (line 28) ... ok
+
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 1.14s
+
+   Doc-tests tpt_capsec_integrations
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+

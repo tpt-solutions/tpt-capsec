@@ -1,0 +1,35 @@
+[package]
+name = "tpt-capsec-fuzz"
+version = "0.0.0"
+publish = false
+edition = "2021"
+
+[package.metadata]
+cargo-fuzz = true
+
+[dependencies]
+libfuzzer-sys = "0.4"
+tpt-capsec-core = { path = "../crates/tpt-capsec-core" }
+
+[[bin]]
+name = "permits_path"
+path = "fuzz_targets/permits_path.rs"
+test = false
+doc = false
+bench = false
+
+[[bin]]
+name = "permits_host"
+path = "fuzz_targets/permits_host.rs"
+test = false
+doc = false
+bench = false
+
+[[bin]]
+name = "permits_program"
+path = "fuzz_targets/permits_program.rs"
+test = false
+doc = false
+bench = false
+
+[workspace]

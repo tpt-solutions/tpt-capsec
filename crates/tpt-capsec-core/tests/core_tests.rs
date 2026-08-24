@@ -52,6 +52,33 @@ fn permits_path_component_prefix_semantics() {
 }
 
 #[test]
+fn permits_path_rejects_parent_traversal() {
+    // Regression: lexical `..` must never bypass the prefix comparison.
+    assert!(!permits_path(
+        std::path::Path::new("/var/data"),
+        std::path::Path::new("/var/data/../../etc/passwd")
+    ));
+    assert!(!permits_path(
+        std::path::Path::new("/var/data"),
+        std::path::Path::new("/var/../etc/passwd")
+    ));
+    assert!(!permits_path(
+        std::path::Path::new("/var/data"),
+        std::path::Path::new("../etc/passwd")
+    ));
+    assert!(!permits_path(
+        std::path::Path::new("/var/data"),
+        std::path::Path::new("/etc/passwd")
+    ));
+
+    // `..` that stays inside the scope still matches after normalization.
+    assert!(permits_path(
+        std::path::Path::new("/var/data"),
+        std::path::Path::new("/var/data/sub/../config.json")
+    ));
+}
+
+#[test]
 fn permits_host_exact_and_suffix() {
     assert!(permits_host("example.com", "example.com"));
     assert!(permits_host("example.com", "api.example.com"));
@@ -107,6 +134,74 @@ fn narrowing_restricts_scope() {
     let narrowed = spawn.narrow(["git"]);
     assert!(narrowed.permits_program("git"));
     assert!(!narrowed.permits_program("cargo"));
+}
+
+#[test]
+fn permits_path_glob_scopes() {
+    // Single-component wildcard.
+    assert!(permits_path(
+        std::path::Path::new("/var/data/*.json"),
+        std::path::Path::new("/var/data/config.json")
+    ));
+    assert!(!permits_path(
+        std::path::Path::new("/var/data/*.json"),
+        std::path::Path::new("/var/data/sub/config.json")
+    ));
+
+    // `**` spans directories (including none).
+    assert!(permits_path(
+        std::path::Path::new("/var/data/**/*.log"),
+        std::path::Path::new("/var/data/a/b/c/trace.log")
+    ));
+    assert!(permits_path(
+        std::path::Path::new("/var/data/**/*.log"),
+        std::path::Path::new("/var/data/app.log")
+    ));
+    assert!(!permits_path(
+        std::path::Path::new("/var/data/**/*.log"),
+        std::path::Path::new("/etc/app.log")
+    ));
+
+    // `?` matches exactly one character.
+    assert!(permits_path(
+        std::path::Path::new("/var/data/part?.bin"),
+        std::path::Path::new("/var/data/part1.bin")
+    ));
+    assert!(!permits_path(
+        std::path::Path::new("/var/data/part?.bin"),
+        std::path::Path::new("/var/data/part10.bin")
+    ));
+}
+
+#[test]
+fn permits_host_glob_scopes() {
+    assert!(permits_host("*.example.com", "api.example.com"));
+    assert!(!permits_host("*.example.com", "example.com"));
+    assert!(!permits_host("*.example.com", "evil.com"));
+    assert!(permits_host("api.*.example.com", "api.eu.example.com"));
+}
+
+#[test]
+fn capability_set_bundles_tokens() {
+    use tpt_capsec_core::CapabilitySet;
+
+    let root = RootCapability::acquire();
+    let set = CapabilitySet::new()
+        .with_fs_read(root.delegate_fs_read("/var/data"))
+        .with_net_connect(root.delegate_net_connect("example.com"));
+
+    assert_eq!(
+        set.fs_read().map(|t| t.scope().as_path()),
+        Some(Path::new("/var/data"))
+    );
+    assert!(set.net_connect().is_some());
+    assert!(set.fs_write().is_none());
+
+    // Redacted debug: kinds only.
+    let rendered = format!("{set:?}");
+    assert!(rendered.contains("fs_read"));
+    assert!(rendered.contains("net_connect"));
+    assert!(!rendered.contains("example"));
 }
 
 #[test]

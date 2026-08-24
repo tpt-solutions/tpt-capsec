@@ -113,6 +113,11 @@ define_token! {
 
 define_token! {
     /// Authority to bind exactly one socket address.
+    ///
+    /// There is intentionally **no** `narrow` method on this token: its scope
+    /// is a single exact socket address, so there is nothing narrower to
+    /// narrow *to*. Delegate a fresh bind token per address from
+    /// [`crate::RootCapability::delegate_net_bind`] instead.
     NetBindToken {
         scope: SocketAddr,
         doc_scope: "The exact socket address this token may bind.",

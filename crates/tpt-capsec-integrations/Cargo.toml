@@ -10,17 +10,26 @@ homepage = { workspace = true }
 description = "Integration layer mapping tpt-capsec capability tokens onto plugin/WASI-style sandboxes"
 keywords = ["capability", "wasi", "sandbox", "plugin", "security"]
 categories = ["wasm", "development-tools"]
-readme = "../../README.md"
+readme = "README.md"
 
 [package.metadata.docs.rs]
 all-features = true
 
 [dependencies]
 tpt-capsec = { version = "0.1.0", path = "../tpt-capsec" }
+serde = { version = "1", optional = true, default-features = false, features = ["derive", "std"] }
+# Direct engine adapter. Pinned to one minor line per the documented
+# version-compatibility policy; bump deliberately with changelog notes.
+wasmtime-wasi = { version = "=24", optional = true, default-features = false }
 
-# Engine adapters (direct wasmtime/extism bindings) are planned behind these
-# feature flags post-v0.1; see the crate documentation.
 [features]
 default = []
-wasmtime = []
+# (De)serialization support for `SandboxPlan` and `PreopenedDir`.
+serde = ["dep:serde"]
+# Direct wasmtime adapter mapping `SandboxPlan` onto a restricted
+# `WasiCtxBuilder`.
+wasmtime = ["dep:wasmtime-wasi"]
 extism = []
+
+[dev-dependencies]
+serde_json = "1"

@@ -41,6 +41,7 @@
 #![deny(missing_debug_implementations)]
 #![forbid(unsafe_code)]
 
+pub mod audit;
 pub mod error;
 pub mod fs;
 pub mod net;

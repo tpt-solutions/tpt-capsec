@@ -46,6 +46,9 @@
 #![deny(missing_debug_implementations)]
 #![forbid(unsafe_code)]
 
+#[cfg(feature = "wasmtime")]
+pub mod wasmtime;
+
 use std::net::SocketAddr;
 use std::path::PathBuf;
 
@@ -53,6 +56,7 @@ use tpt_capsec::core::{FsReadToken, FsWriteToken, NetBindToken, NetConnectToken}
 
 /// A single preopened-directory grant derived from an fs token.
 #[derive(Debug, Clone, PartialEq, Eq)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct PreopenedDir {
     /// Host path exposed to the guest.
     pub guest_path: PathBuf,
@@ -65,6 +69,7 @@ pub struct PreopenedDir {
 /// Feed this into `WasiCtxBuilder::preopened_dir`, extism manifest fields, or
 /// any equivalent mechanism of your runtime.
 #[derive(Debug, Clone, Default, PartialEq, Eq)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct SandboxPlan {
     /// Filesystem grants.
     pub preopened_dirs: Vec<PreopenedDir>,
@@ -141,5 +146,25 @@ impl SandboxPlan {
         }
         self.bind_addrs.push(*token.scope());
         Ok(self)
+    }
+}
+
+#[cfg(all(test, feature = "serde"))]
+mod serde_tests {
+    use super::*;
+
+    #[test]
+    fn plan_round_trips_through_json() {
+        let mut plan = SandboxPlan::new();
+        plan.preopened_dirs.push(PreopenedDir {
+            guest_path: "/data".into(),
+            write: false,
+        });
+        plan.allowed_hosts.push("api.example.com".into());
+        plan.bind_addrs.push("127.0.0.1:8080".parse().unwrap());
+
+        let json = serde_json::to_string(&plan).unwrap();
+        let back: SandboxPlan = serde_json::from_str(&json).unwrap();
+        assert_eq!(plan, back);
     }
 }

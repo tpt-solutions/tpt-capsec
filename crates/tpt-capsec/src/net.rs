@@ -12,6 +12,15 @@ use tpt_capsec_core::{NetBindToken, NetConnectToken};
 use crate::error::CapsecError;
 
 fn authorize_connect(token: &NetConnectToken<'_>, host: &str) -> Result<(), CapsecError> {
+    let result = check_connect(token, host);
+    match &result {
+        Ok(()) => crate::audit::granted("net.connect"),
+        Err(e) => crate::audit::denied("net.connect", e),
+    }
+    result
+}
+
+fn check_connect(token: &NetConnectToken<'_>, host: &str) -> Result<(), CapsecError> {
     if token.is_revoked() {
         return Err(CapsecError::Revoked);
     }
@@ -46,6 +55,15 @@ pub fn tcp_connect(
 }
 
 fn authorize_bind(token: &NetBindToken<'_>, addr: SocketAddr) -> Result<(), CapsecError> {
+    let result = check_bind(token, addr);
+    match &result {
+        Ok(()) => crate::audit::granted("net.bind"),
+        Err(e) => crate::audit::denied("net.bind", e),
+    }
+    result
+}
+
+fn check_bind(token: &NetBindToken<'_>, addr: SocketAddr) -> Result<(), CapsecError> {
     if token.is_revoked() {
         return Err(CapsecError::Revoked);
     }

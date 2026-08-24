@@ -24,6 +24,15 @@ use crate::error::CapsecError;
 
 /// Checks revocation + scope before touching `std`.
 fn authorize(token: &FsReadToken<'_>, path: &Path) -> Result<(), CapsecError> {
+    let result = check_read(token, path);
+    match &result {
+        Ok(()) => crate::audit::granted("fs.read"),
+        Err(e) => crate::audit::denied("fs.read", e),
+    }
+    result
+}
+
+fn check_read(token: &FsReadToken<'_>, path: &Path) -> Result<(), CapsecError> {
     if token.is_revoked() {
         return Err(CapsecError::Revoked);
     }
@@ -37,6 +46,15 @@ fn authorize(token: &FsReadToken<'_>, path: &Path) -> Result<(), CapsecError> {
 }
 
 fn authorize_write(token: &FsWriteToken<'_>, path: &Path) -> Result<(), CapsecError> {
+    let result = check_write(token, path);
+    match &result {
+        Ok(()) => crate::audit::granted("fs.write"),
+        Err(e) => crate::audit::denied("fs.write", e),
+    }
+    result
+}
+
+fn check_write(token: &FsWriteToken<'_>, path: &Path) -> Result<(), CapsecError> {
     if token.is_revoked() {
         return Err(CapsecError::Revoked);
     }
@@ -152,16 +170,24 @@ pub fn rename(
 ) -> Result<(), CapsecError> {
     let from = from.as_ref();
     let to = to.as_ref();
-    if token.is_revoked() {
-        return Err(CapsecError::Revoked);
+    let result = (|| -> Result<(), CapsecError> {
+        if token.is_revoked() {
+            return Err(CapsecError::Revoked);
+        }
+        if !(token.permits_path(from) && token.permits_path(to)) {
+            return Err(CapsecError::OutOfScope(format!(
+                "rename '{}' -> '{}' not fully within token scope",
+                from.display(),
+                to.display()
+            )));
+        }
+        Ok(())
+    })();
+    match &result {
+        Ok(()) => crate::audit::granted("fs.rename"),
+        Err(e) => crate::audit::denied("fs.rename", e),
     }
-    if !(token.permits_path(from) && token.permits_path(to)) {
-        return Err(CapsecError::OutOfScope(format!(
-            "rename '{}' -> '{}' not fully within token scope",
-            from.display(),
-            to.display()
-        )));
-    }
+    result?;
     Ok(std::fs::rename(from, to)?)
 }
 

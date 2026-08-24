@@ -1,5 +1,9 @@
 # tpt-capsec
 
+[![CI](https://github.com/tpt-solutions/tpt-capsec/actions/workflows/ci.yml/badge.svg)](https://github.com/tpt-solutions/tpt-capsec/actions/workflows/ci.yml)
+[![crates.io](https://img.shields.io/crates/v/tpt-capsec.svg)](https://crates.io/crates/tpt-capsec)
+[![docs.rs](https://docs.rs/tpt-capsec/badge.svg)](https://docs.rs/tpt-capsec)
+
 Compile-time capability-based security for Rust.
 
 `tpt-capsec` is a native, ergonomic capability model that removes *ambient
@@ -52,6 +56,20 @@ fn process_data(fs: FsReadToken<'_>, _net: NetConnectToken<'_>)
 | [`tpt-capsec-core`](crates/tpt-capsec-core) | Sealed capability trait, root capability, scoped tokens, scope checks |
 | [`tpt-capsec`](crates/tpt-capsec) | Sandboxed wrappers for `std::fs`, TCP networking and process spawning |
 | [`tpt-capsec-integrations`](crates/tpt-capsec-integrations) | Mapping token authority onto plugin/WASI-style sandboxes |
+| [`tpt-capsec-audit`](crates/tpt-capsec-audit) | Scanner flagging direct `std` usage in crates that adopt the capability model |
+
+## How it compares
+
+| Approach | Isolation boundary | Authority visibility | Cost / friction | Best for |
+|---|---|---|---|---|
+| Raw `std` | none — full ambient authority in every function | implicit, invisible in signatures | zero | trusted scripts, prototypes |
+| **`tpt-capsec`** | in-process type + scope checks (compile-time discipline) | explicit: token types in signatures; auditable at runtime | small: delegate tokens, use wrappers | structured authority flow between *trusted* components |
+| Wasm runtimes (`wasmtime`, `extism`) | full VM/heap isolation of untrusted code | per-module permissions configured by the host | heavy dependency; ABI boundary | running genuinely untrusted plugins |
+| OS sandboxing (seccomp, AppContainer, sandbox-exec) | kernel-enforced process boundary | coarse (syscalls), hard to map to app intent | platform-specific, complex policies | defense-in-depth around a whole process |
+
+These compose rather than compete: use `tpt-capsec` inside your host to
+structure authority between components, and derive the guest sandbox from
+the same tokens via `tpt-capsec-integrations`.
 
 ## How it works
 
@@ -78,12 +96,6 @@ linear-type discipline ("use after move" is a compile error).
 
 Dual-licensed under [MIT](LICENSE-MIT) or [Apache-2.0](LICENSE-APACHE),
 at your option. Copyright TPT Solutions.
-
-<!-- Badges: CI / crates.io / docs.rs placeholders
-[![CI](https://github.com/tpt-solutions/tpt-capsec/actions/workflows/ci.yml/badge.svg)]()
-[![crates.io](https://img.shields.io/crates/v/tpt-capsec.svg)]()
-[![docs.rs](https://docs.rs/tpt-capsec/badge.svg)]()
--->
 
 ## MSRV
 

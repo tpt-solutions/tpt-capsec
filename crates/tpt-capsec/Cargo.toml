@@ -10,10 +10,22 @@ homepage = { workspace = true }
 description = "Sandboxed fs/net/process wrappers enforcing tpt-capsec capability tokens"
 keywords = ["capability", "security", "sandbox", "fs", "net"]
 categories = ["rust-patterns", "filesystem", "network-programming"]
-readme = "../../README.md"
+readme = "README.md"
 
 [package.metadata.docs.rs]
 all-features = true
 
 [dependencies]
 tpt-capsec-core = { workspace = true }
+tracing = { version = "0.1", optional = true, default-features = false }
+
+[features]
+default = []
+# Emits audit events (`debug` on grant, `warn` on denial) on the
+# `tpt_capsec` tracing target from every authorization choke point.
+tracing = ["dep:tracing"]
+
+[dev-dependencies]
+# Package-level dev-dependency cycle with tpt-capsec-integrations is allowed
+# by Cargo; it exists only so the `sandboxed_plugin` example can run.
+tpt-capsec-integrations = { version = "0.1.0", path = "../tpt-capsec-integrations" }

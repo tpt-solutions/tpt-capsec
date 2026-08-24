@@ -9,3 +9,7 @@ Cargo.lock
 # OS
 .DS_Store
 Thumbs.db
+
+fuzz/target
+fuzz/Cargo.lock
+fuzz/artifacts

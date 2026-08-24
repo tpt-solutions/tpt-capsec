@@ -38,7 +38,20 @@ the Wasm/OS boundary constrains the untrusted payload itself.
   bind scopes match exact socket addresses.
 - Process scopes are exact program-name allowlists.
 
-Glob-based matching is deliberately out of scope for v0.1.
+Glob-based matching: path scopes may contain `*`, `?`, and a lone `**`
+component; host scopes may contain `*`/`?` wildcards. Non-glob scopes keep
+the exact/prefix semantics above.
+
+## Process arguments are not scoped
+
+`ProcessSpawnToken` checks only the **program name** against its allowlist.
+Arguments, environment variables, and working directory passed to
+`process::spawn` / `process::output` are forwarded verbatim to
+`std::process::Command` and are *not* validated by tpt-capsec. A permitted
+program invoked with hostile arguments can therefore act far outside your
+intended scope (e.g. `git` invoked with a config-injection argument). Keep
+allowlists minimal, prefer argument-free invocations, and treat argument
+construction as trusted-code responsibility.
 
 ## Reporting vulnerabilities
 

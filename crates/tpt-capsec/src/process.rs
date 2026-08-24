@@ -10,6 +10,15 @@ use tpt_capsec_core::ProcessSpawnToken;
 use crate::error::CapsecError;
 
 fn authorize(token: &ProcessSpawnToken<'_>, program: &str) -> Result<(), CapsecError> {
+    let result = check_spawn(token, program);
+    match &result {
+        Ok(()) => crate::audit::granted("process.spawn"),
+        Err(e) => crate::audit::denied("process.spawn", e),
+    }
+    result
+}
+
+fn check_spawn(token: &ProcessSpawnToken<'_>, program: &str) -> Result<(), CapsecError> {
     if token.is_revoked() {
         return Err(CapsecError::Revoked);
     }

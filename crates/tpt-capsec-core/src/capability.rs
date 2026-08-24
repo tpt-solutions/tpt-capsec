@@ -38,7 +38,14 @@ pub trait Capability: private::Sealed + std::fmt::Debug {}
 /// let root = RootCapability::acquire();
 /// let read = root.delegate_fs_read("/var/data");
 /// ```
-#[derive(Debug, Clone, Copy, Default)]
+/// # Linear-use discipline
+///
+/// Like every other token in this crate, `RootCapability` deliberately does
+/// **not** implement `Clone` or `Copy`. Moving it consumes it, so passing the
+/// root to a callee makes "the root stayed here too" a compile error. All
+/// delegation methods take `&self`, so borrowing the root while delegating
+/// works normally; only hand-off of ownership is restricted.
+#[derive(Debug, Default)]
 pub struct RootCapability {
     /// Prevents structural construction outside this module.
     _private: (),

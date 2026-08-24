@@ -4,11 +4,13 @@ Tracking checklist for building `tpt-capsec`, a compile-time capability-based
 security model for Rust. Enforcement is purely at the Rust type/borrow-checker
 level (no OS syscall interception). Cross-platform: Linux, macOS, Windows.
 
-> Status as of the v0.1 scaffold: Phases 0–3 are implemented and validated
+> Status as of 2026-08-24: Phases 0–3 are implemented and validated
 > (`cargo test`, `clippy -D warnings`, `fmt --check`, `doc -D warnings` all
 > green on Windows; CI covers Linux/macOS/Windows). Phase 4 ships a std-only
-> mapping layer with engine adapters deferred. Remaining work is listed below
-> unchecked.
+> mapping layer with engine adapters deferred. The Phase 7 review bugs are
+> fixed, the three runnable examples exist, and GUIDE.md is written.
+> Remaining work is listed below unchecked (engine adapters, feature
+> additions, automation, publishing).
 
 ## Phase 0: Project Setup & Repository Foundation — DONE
 
@@ -97,8 +99,8 @@ level (no OS syscall interception). Cross-platform: Linux, macOS, Windows.
 ## Phase 5: Documentation, Examples & Cross-Cutting Polish
 
 - [x] `#![deny(missing_docs)]` across all crates; gaps filled
-- [ ] README badges: placeholders present; activate after first publish
-- [ ] Build `examples/` directory: spec's `process_data`, "delegate to a sandboxed plugin", "revoke mid-flight"
+- [x] README badges: CI/crates.io/docs.rs badges added *(crates.io and docs.rs will show unpublished until Phase 6 publish)*
+- [x] Build `examples/` directory: spec's `process_data`, "delegate to a sandboxed plugin", "revoke mid-flight" *(crates/tpt-capsec/examples/{process_data,sandboxed_plugin,revoke_mid_flight}.rs)*
 - [x] Every public function has a doctest or referenced example (audit again after Phase 4 adapters)
 - [x] `[package.metadata.docs.rs] all-features = true` on every crate
 - [ ] **Deferred:** mdBook guide — fast-follow
@@ -123,4 +125,75 @@ level (no OS syscall interception). Cross-platform: Linux, macOS, Windows.
 - [ ] GitHub Release with changelog notes
 - [ ] Post-release smoke test from crates.io
 - [ ] File "future work" backlog (glob scopes, UDP, crypto token module, deeper WASI preview2, mdBook)
+
+## Phase 7: Platform Review Findings (2026-08-24)
+
+> From a full-repo review (bugs, gaps, innovation ideas, adoption). See
+> conversation/plan for full rationale per item.
+
+### Bugs
+
+- [x] **CRITICAL:** fix lexical path-traversal bypass in `permits_path`
+  (`crates/tpt-capsec-core/src/scope.rs`) — a candidate like
+  `/var/data/../../etc/passwd` passes the scope check because only the first
+  `scope`-length components are compared; add a regression test for `..`
+  inside a longer candidate *(fixed via lexical normalization of both paths;
+  regression test `permits_path_rejects_parent_traversal`)*
+- [x] Resolve `RootCapability: Clone + Copy` inconsistency vs. the no-Clone
+  discipline on every derived token — either document why root is exempt or
+  remove the derive *(derive removed; linear-use rationale documented on the type)*
+- [x] Add a doc note on `NetBindToken` explaining why it has no `narrow`
+  (exact-address scope has nothing to narrow to) so it reads as deliberate
+- [x] Add a `SECURITY.md` callout that process tokens don't scope arguments
+  (currently only a module comment in `process.rs`)
+
+### Missing features / innovative additions
+
+- [x] Glob-style path/host scopes — `*`, `?` and a lone `**` component are
+  interpreted automatically whenever present in a delegated scope
+  (`permits_path`/`permits_host` in `crates/tpt-capsec-core/src/scope.rs`);
+  tests in `core_tests.rs`
+- [x] Lint/scanner flagging direct `std::fs`/`std::net`/`std::process` calls
+  in crates that also depend on `tpt-capsec` — new `tpt-capsec-audit`
+  workspace crate (heuristic text scanner, CI-friendly exit codes)
+- [x] `tracing`-based audit logging at the existing `authorize()`/
+  `authorize_write()` choke points in each wrapper module — opt-in `tracing`
+  feature emitting `debug` (grants) / `warn` (denials) on the `tpt_capsec`
+  target via the new `audit` module
+- [x] `CapabilitySet`/bundle type to group related tokens and reduce
+  multi-token function signatures — `crates/tpt-capsec-core/src/bundle.rs`
+- [x] `serde` (de)serialization for `SandboxPlan` — opt-in `serde` feature on
+  `tpt-capsec-integrations`, with a JSON round-trip test
+- [ ] Minimal proof-of-concept wasmtime example wiring `SandboxPlan` into a
+  real restricted `WasiCtx` *(still deferred: requires pinning a wasmtime
+  version and a long dependency build; feature flag remains reserved)*
+
+### Automation
+
+- [x] `cargo-semver-checks` CI job (supports the documented pre-1.0 semver
+  policy) — added to `.github/workflows/ci.yml`
+- [x] `cargo-deny` CI job for dependency/license/advisory checks — added to
+  `.github/workflows/ci.yml`; add a `deny.toml` before first real run
+- [ ] Release automation (`cargo-release` or `release-plz`) to replace the
+  manual Phase 6 publish checklist
+- [x] `cargo-fuzz` targets for `permits_path`/`permits_host`/`permits_program`
+  — checked-in skeletons under `fuzz/` (excluded from the workspace; run with
+  `cargo +nightly fuzz run <target>`)
+
+### Adoption: examples, templates, onboarding
+
+- [x] `examples/process_data.rs` — runnable version of the README/spec
+  scenario (currently only a doctest) *(crates/tpt-capsec/examples/process_data.rs)*
+- [x] `examples/sandboxed_plugin.rs` — `tpt-capsec-integrations::SandboxPlan`
+  built end-to-end from tokens *(crates/tpt-capsec/examples/sandboxed_plugin.rs)*
+- [x] `examples/revoke_mid_flight.rs` — `RevocationGroup` across a spawned
+  thread *(crates/tpt-capsec/examples/revoke_mid_flight.rs)*
+- [x] Minimal copy-paste starter skeleton (or `cargo generate` template) —
+  `template/` directory (excluded from the workspace), see its README
+- [x] README comparison table: `tpt-capsec` vs. raw `std` vs. WASM
+  (`wasmtime`/`extism`) vs. OS sandboxing (seccomp/AppContainer)
+- [x] `GUIDE.md` covering the three failure modes (use-after-move,
+  wrong-token-type, out-of-scope-path) with compile-fail snippets, as a
+  lighter-weight stand-in until mdBook lands
+- [x] Activate README badges (CI/crates.io/docs.rs) *(crates.io/docs.rs will resolve once Phase 6 publish completes)*
 

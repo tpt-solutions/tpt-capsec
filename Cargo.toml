@@ -4,7 +4,9 @@ members = [
     "crates/tpt-capsec-core",
     "crates/tpt-capsec",
     "crates/tpt-capsec-integrations",
+    "crates/tpt-capsec-audit",
 ]
+exclude = ["fuzz", "template"]
 
 [workspace.package]
 authors = ["TPT Solutions"]

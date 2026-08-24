@@ -10,7 +10,7 @@ homepage = { workspace = true }
 description = "Core capability primitives for the tpt-capsec compile-time capability model"
 keywords = ["capability", "security", "sandbox", "no-std-free", "authority"]
 categories = ["rust-patterns", "no-std"]
-readme = "../../README.md"
+readme = "README.md"
 
 [package.metadata.docs.rs]
 all-features = true

@@ -43,9 +43,11 @@
 //! # Scope-matching semantics (v0.1)
 //!
 //! - Filesystem scopes match **lexically by path-component prefix**
-//!   ([`permits_path`]). No glob support.
+//!   ([`permits_path`]). Scopes may additionally contain glob wildcards
+//!   (`*`, `?`, and a lone `**` component spanning directories).
 //! - Network connect scopes match **exact hosts or dot-suffix subdomains**
-//!   ([`permits_host`]); bind scopes match **exact socket addresses**.
+//!   ([`permits_host`]), or glob patterns when the scope contains
+//!   wildcards; bind scopes match **exact socket addresses**.
 //! - Process scopes are **exact-name allowlists** ([`permits_program`]).
 //!
 //! # Runtime revocation (opt-in)
@@ -65,12 +67,14 @@
 #![deny(missing_debug_implementations)]
 #![forbid(unsafe_code)]
 
+mod bundle;
 mod capability;
 mod narrow;
 mod revocation;
 mod scope;
 mod tokens;
 
+pub use bundle::CapabilitySet;
 pub use capability::{Capability, RootCapability};
 pub use revocation::RevocationGroup;
 pub use scope::{permits_host, permits_path, permits_program};
