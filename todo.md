@@ -87,11 +87,24 @@ level (no OS syscall interception). Cross-platform: Linux, macOS, Windows.
 
 - [x] Scaffolded crate depending on `tpt-capsec`; `wasmtime` / `extism` feature flags reserved
 - [x] WASI-to-token mapping implemented as std-only `SandboxPlan` (preopened dirs ← fs tokens, host allowlist ← connect token, bind addrs ← bind token)
-- [ ] Direct wasmtime adapter configuring a restricted `WasiCtxBuilder` behind the `wasmtime` feature
-- [ ] Direct extism manifest adapter behind the `extism` feature
+- [x] Direct wasmtime adapter configuring a restricted `WasiCtxBuilder` behind the `wasmtime` feature *(pinned `wasmtime-wasi = "=24"`; maps preopened dirs from fs tokens and reports host/bind grants back as unenforceable under preview1 WASI)*
+- [x] Direct extism manifest adapter behind the `extism` feature *(pinned
+  `extism = "=1"`; compiles `SandboxPlan` into a `Manifest` via
+  `allowed_paths` (host→guest, read-only grants marked `::ro`) and extism's
+  native outbound-host allowlist; bind permits reported as unenforceable.
+  Note: the `wasmtime` and `extism` features are mutually exclusive because
+  each embeds its own wasmtime C runtime — enforced with `compile_error!`)*
 - [x] **Decision:** one-way mapping only for v0.1 (tokens configure a sandbox; guest requests not surfaced back)
-- [ ] Examples running wasm modules restricted to delegated authority
-- [ ] Integration tests proving sandbox restriction (checked-in wasm module)
+- [x] Examples running wasm modules restricted to delegated authority *(the
+  checked-in `wasmtime_sandbox` integration test is the PoC: a real wasm
+  module compiled from WAT runs inside the token-derived context and its
+  `path_open("../outside.txt")` traversal is denied with a capability errno)*
+- [x] Integration tests proving sandbox restriction (checked-in wasm module)
+  *(tests/wasmtime_sandbox.rs — WAT module embedded in-tree; asserts errno
+  63/76 on escape attempt and untouched outside file. Local note: Windows
+  Defender may false-positive on freshly built wasmtime test binaries
+  (os error 225); exclude `target/` or run under release with
+  `CARGO_PROFILE_RELEASE_LTO=false`)*
 - [x] Version-compatibility/pinning policy documented in crate docs
 - [ ] Confirm cross-platform CI coverage once engines are wired; feature-gate unsupported combos
 - [x] Crate-level docs on purpose, features, rationale vs WASI-native capabilities

@@ -33,6 +33,16 @@ Pre-1.0 policy: minor (`0.x`) releases may contain breaking API changes.
 - New `tpt-capsec-audit` crate: heuristic scanner flagging direct
   `std::fs`/`std::net`/`std::process` usage in crates depending on
   `tpt-capsec`; CI-friendly exit codes.
+- Direct wasmtime adapter (`wasmtime` feature, pinned `wasmtime-wasi = "=24"`):
+  maps `SandboxPlan` preopened directories onto a restricted `WasiCtxBuilder`
+  and reports host/bind grants as unenforceable under preview1 WASI.
+- Direct extism adapter (`extism` feature, pinned `extism = "=1"`): compiles
+  `SandboxPlan` into an extism `Manifest` (`allowed_paths` with `::ro`
+  read-only markers, native outbound-host allowlist); the two engine features
+  are mutually exclusive (their wasmtime C runtimes collide at link time).
+- End-to-end sandbox-restriction integration test: a checked-in WAT module
+  runs inside the token-derived WASI context and its `../` traversal attempt
+  is denied with a capability errno while the outside file stays untouched.
 - CI: `cargo-semver-checks` and `cargo-deny` jobs; checked-in `cargo-fuzz`
   targets for `permits_path` / `permits_host` / `permits_program`.
 - Copy-paste starter skeleton under `template/`; runnable examples

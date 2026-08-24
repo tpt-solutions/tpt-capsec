@@ -1,6 +1,6 @@
 //! Direct wasmtime adapter (behind the `wasmtime` feature).
 //!
-//! Maps a [`SandboxPlan`](crate::SandboxPlan) onto wasmtime's
+//! Maps a [`SandboxPlan`] onto wasmtime's
 //! `WasiCtxBuilder` so the guest's WASI authority is exactly what the host
 //! delegated through tpt-capsec tokens:
 //!
@@ -79,13 +79,13 @@ mod tests {
 
     #[test]
     fn applies_dirs_and_reports_unenforced_grants() {
-        // A real directory is required for preopening.
-        let dir = std::env::temp_dir().join("tpt-capsec-wasmtime-adapter-test");
-        std::fs::create_dir_all(&dir).unwrap();
+        // A real host directory is required for preopening.
+        let host_dir = std::env::temp_dir().join("tpt-capsec-wasmtime-adapter-test");
+        std::fs::create_dir_all(&host_dir).unwrap();
 
         let mut plan = SandboxPlan::new();
         plan.preopened_dirs.push(PreopenedDir {
-            guest_path: "/data".into(),
+            guest_path: host_dir.clone(),
             write: false,
         });
         plan.allowed_hosts.push("api.example.com".into());

@@ -20,7 +20,16 @@ tpt-capsec = { version = "0.1.0", path = "../tpt-capsec" }
 serde = { version = "1", optional = true, default-features = false, features = ["derive", "std"] }
 # Direct engine adapter. Pinned to one minor line per the documented
 # version-compatibility policy; bump deliberately with changelog notes.
-wasmtime-wasi = { version = "=24", optional = true, default-features = false }
+wasmtime-wasi = { version = "=24", optional = true, default-features = false, features = [
+    "preview1",
+] }
+# Not pinned exactly: when the `extism` feature is also enabled, extism
+# brings its own newer wasmtime line and Cargo keeps both copies.
+wasmtime = { version = "24", optional = true, default-features = false, features = [
+    "cranelift",
+    "wat",
+] }
+extism = { version = "=1", optional = true }
 
 [features]
 default = []
@@ -28,8 +37,9 @@ default = []
 serde = ["dep:serde"]
 # Direct wasmtime adapter mapping `SandboxPlan` onto a restricted
 # `WasiCtxBuilder`.
-wasmtime = ["dep:wasmtime-wasi"]
-extism = []
+wasmtime = ["dep:wasmtime-wasi", "dep:wasmtime"]
+# Direct extism adapter compiling `SandboxPlan` into an extism `Manifest`.
+extism = ["dep:extism"]
 
 [dev-dependencies]
 serde_json = "1"

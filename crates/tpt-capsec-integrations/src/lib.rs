@@ -46,6 +46,17 @@
 #![deny(missing_debug_implementations)]
 #![forbid(unsafe_code)]
 
+// Both engines embed wasmtime's C support code; linking two copies of it
+// into one binary collides on duplicate C symbols (e.g.
+// `__jit_debug_register_code`). Pick one engine per build.
+#[cfg(all(feature = "wasmtime", feature = "extism"))]
+compile_error!(
+    "features `wasmtime` and `extism` are mutually exclusive: \
+     each embeds its own wasmtime runtime and their C symbols collide at link time"
+);
+
+#[cfg(feature = "extism")]
+pub mod extism;
 #[cfg(feature = "wasmtime")]
 pub mod wasmtime;
 
